@@ -3,11 +3,16 @@
 namespace li3_filesystem\tests\cases\storage;
 
 /**
- * Lithium Filesystem: managing file uploads the easy way
+ * li3 filesystem: managing files the easy way
+ * @copyright     Modifications by Hans Donner
+ * @license       http://opensource.org/licenses/bsd-license.php The BSD License
  *
+ * Original:
+ * Lithium Filesystem: managing file uploads the easy way
  * @copyright     Copyright 2012, Little Boy Genius (http://www.littleboygenius.org)
  * @license       http://opensource.org/licenses/bsd-license.php The BSD License
  */
+
 
 use li3_filesystem\extensions\storage\FileSystem;
 
@@ -72,7 +77,12 @@ class FileSystemTest extends \lithium\test\Integration {
 		$data     = 'Some test content';
 
 		$this->assertTrue(FileSystem::write('default', $filename, $data));
-		$this->assertFalse(FileSystem::write('non_existing', $filename, $data));
+		$this->assertException(
+				'Configuration `non_existing` has not been defined.',
+				function () use ($filename, $data) {
+					FileSystem::write('non_existing', $filename, $data);
+				}
+		);
 	}
 
 	public function testFileSystemRead() {

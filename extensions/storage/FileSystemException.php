@@ -12,10 +12,12 @@
  */
 
 
+namespace li3_filesystem\extensions\storage;
+
 
 /**
- * Require a filesystem config file, where all filesystem configurations should reside.
+ * A FileSystemException is thrown when actions on the filesystem could not be completed,
+ * due to various reasons. Eg when an applied strategie decides that the file may not be
+ * written.
  */
-require __DIR__ . '/bootstrap/filesystem.php';
-
-?>
+class FileSystemException extends \RuntimeException {}

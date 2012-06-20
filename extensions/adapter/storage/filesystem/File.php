@@ -1,61 +1,70 @@
 <?php
 
-namespace li3_filesystem\extensions\adapter\storage\filesystem;
-
 /**
- * Lithium Filesystem: managing file uploads the easy way
+ * li3 filesystem: managing files the easy way
+ * @copyright     Modifications by Hans Donner
+ * @license       http://opensource.org/licenses/bsd-license.php The BSD License
  *
+ * Original:
+ * Lithium Filesystem: managing file uploads the easy way
  * @copyright     Copyright 2012, Little Boy Genius (http://www.littleboygenius.org)
  * @license       http://opensource.org/licenses/bsd-license.php The BSD License
  */
 
+
+
+namespace li3_filesystem\extensions\adapter\storage\filesystem;
+
+use li3_filesystem\extensions\storage\FileSystemException;
+use li3_filesystem\extensions\storage\FileSystemAdapater;
 use lithium\core\Libraries;
 
 /**
- * A File Filesystem adapter implementation. Requires
- * writable folder on filesystem for example webroot\uploads
+ * A regulare File Filesystem adapter implementation. Requires a writable path on filesystem,
+ * for example storage\uploads.
  *
- * The `File` filesystem adapter is meant to be used through the `FileSystem` interface,
- * which abstracts away file writting, adapter instantiation and filter
- * implementation.
- *
- * A simple configuration of this adapter can be accomplished in `config/bootstrap/filesystem.php`
- * as follows:
+ * A simple configuration of this adapter can be accomplished like:
  *
  * {{{
  * FileSystem::config(array(
  *     'filesystem-config-name' => array(
  *         'adapter' => 'File',
- *         'path' => '/webroot/img',
+ *         'path' => 'some/path/to/the/files/to/store',
  *     )
  * ));
  * }}}
+ *
+ * @see \li3_filesystem\extensions\storage\FileSystem
+ * @see \li3_filesystem\extensions\storage\FileSystemAdapter
  */
 
-class File extends \lithium\core\Object {
+class File extends \lithium\core\Object implements FileSystemAdapater {
 
 	/**
 	 * Class constructor.
 	 *
 	 * @see app\extensions\storage\FileSystem::config()
-	 * @param array $config Configuration parameters for this filesystem adapter. These settings are
-	 *        indexed by name and queryable through `FileSystem::config('name')`.
-	 *        The defaults are:
-	 *        - 'path' : Path where uploaded files live `LITHIUM_APP_PATH . '/webroot/uploads'`.
+	 * @param array $config Configuration parameters.
+	 *        - 'path': parent directory where to store the file
+	 *          Defaults to `LITHIUM_APP_PATH . '/resources/tmp/files'`.
 	 */
 	public function __construct(array $config = array()) {
 		$defaults = array(
-			'path' => Libraries::get(true, 'path') . '/webroot/uploads'
+			'path' => Libraries::get(true, 'resources') . '/tmp/files'
 		);
 		parent::__construct($config + $defaults);
 	}
 
 	/**
-     * @param string $filename
-     * @param string $data
-     * @param array $options
-     * @return mixed returns filename or false otherwise.
-     */
+	 * Writes data to a file, like but not exactly as `file_put_contents()`.
+	 *
+	 * @param string $filename Path to the file where to write the data, normaly relative to the
+	 *                         path configured.
+	 * @param mixed $data The data to write. Can be either a string, an array or a stream resource.
+	 * @param mixed $options Options for the method.
+	 * @return callable A callable implementing the action.
+	 *                  The callable returns the number of bytes that were written, or `false` on failure.
+	 */
 	public function write($filename, $data, array $options = array()) {
 		$path = $this->_config['path'];
 
@@ -63,19 +72,20 @@ class File extends \lithium\core\Object {
 			$data = $params['data'];
 			$path = "{$path}/{$params['filename']}";
 
-			if (file_put_contents($path, $data)) {
-				return $params['filename'];
-			}
-
-			return false;
+			return file_put_contents($path, $data);
 		};
 	}
 
 	/**
-     * @param string $filename
-     * @return string|boolean
-     */
-	public function read($filename) {
+	 * Reads data from a file, like but not exactly as `file_get_contents()`.
+	 *
+	 * @param string $filename Path to the file to read the data, normaly relative to the
+	 *                         path configured.
+	 * @param mixed $options Options for the method and strategies.
+	 * @return callable A callable implementing the action.
+	 *                  The callable returns the read data or `false` on failure.
+	 */
+	public function read($filename, array $options = array()) {
 		$path = $this->_config['path'];
 
 		return function($self, $params) use (&$path) {
@@ -90,11 +100,18 @@ class File extends \lithium\core\Object {
 	}
 
 	/**
-     * @param string $filename
-     * @return boolean
-     */
-	public function delete($filename) {
+	 * Deletes a file.
+	 *
+	 * @param string $name Configuration to be used.
+	 * @param string $filename Path to the file to delete, normaly relative to the
+	 *                         path configured.
+	 * @param mixed $options Options for the method and strategies.
+	 * @return callable A callable implementing the action.
+	 *                  The callable returns 'true' if succeeded, `false` otherwise
+	 */
+	public function delete($filename, array $options = array()) {
 		$path = $this->_config['path'];
+
 		return function($self, $params) use (&$path) {
 			$path = "{$path}/{$params['filename']}";
 
@@ -107,11 +124,17 @@ class File extends \lithium\core\Object {
 	}
 
 	/**
-	 * @param string $filename
-	 * @return boolean
+	 * Checks whether a file or directory exists
+	 *
+	 * @param string $filename Path to the file to delete, normaly relative to the
+	 *                         path configured.
+	 * @param mixed $options Options for the method and strategies.
+	 * @return callable A callable implementing the action.
+	 *                  The callable returns 'true' if succeeded, `false` otherwise
 	 */
-	public function exists($filename) {
+	public function exists($filename, array $options = array()) {
 		$path = $this->_config['path'];
+
 		return function($self, $params) use (&$path) {
 			$path = "{$path}/{$params['filename']}";
 
@@ -120,9 +143,6 @@ class File extends \lithium\core\Object {
 		};
 	}
 
-
 }
-
-
 
 ?>
