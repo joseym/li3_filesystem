@@ -24,6 +24,12 @@ use lithium\core\ConfigException;
  * In most cases, you will configure various named Filesystem configurations in your bootstrap process,
  * which will then be available to you in all other parts of your application.
  *
+ * Strategies can be specified to target the data to the filename:
+ * - write: writeFilename, write
+ * - read: readFilename
+ * - delete: deleteFilename
+ * - exists: existsFilename
+ *
  * For user uploadable files, keep an eye on security! See eg the information on OWASP.
  *
  * A simple example configuration:
@@ -95,7 +101,8 @@ class FileSystem extends \lithium\core\Adaptable {
 
 		$data = parent::applyStrategies($method, $name, $data, $options);
 		if (!$data) {
-			throw new FileSystemException('Blocked from executing by one the strategies applied.');
+			$message = "Blocked from executing by a strategy targetting `$method`.";
+			throw new FileSystemException($message);
 		}
 		return $data;
 	}
@@ -121,7 +128,8 @@ class FileSystem extends \lithium\core\Adaptable {
 			throw new ConfigException("Configuration `{$name}` has not been defined.");
 		}
 
-		$data = static::applyStrategies(__FUNCTION__, $name, $data, $options + compact('filename'));
+		$filename = static::applyStrategies(__FUNCTION__ . 'Filename', $name, $filename, $options);
+		$data = static::applyStrategies(__FUNCTION__, $name, $data, compact('filename') + $options);
 
 		$method = static::adapter($name)->write($filename, $data, $options);
 		$params = compact('filename', 'data', 'options');
@@ -147,6 +155,7 @@ class FileSystem extends \lithium\core\Adaptable {
 			throw new ConfigException("Configuration `{$name}` has not been defined.");
 		}
 
+		$filename = static::applyStrategies(__FUNCTION__ . 'Filename', $name, $filename, $options);
 		$method = static::adapter($name)->read($filename, $options);
 		$params = compact('filename', 'options');
 		return static::_filter(__FUNCTION__, $params, $method, $settings[$name]['filters']);
@@ -171,6 +180,7 @@ class FileSystem extends \lithium\core\Adaptable {
 			throw new ConfigException("Configuration `{$name}` has not been defined.");
 		}
 
+		$filename = static::applyStrategies(__FUNCTION__ . 'Filename', $name, $filename, $options);
 		$method   = static::adapter($name)->delete($filename);
 		$params   = compact('filename', 'options');
 		return static::_filter(__FUNCTION__, $params, $method, $settings[$name]['filters']);
@@ -195,6 +205,7 @@ class FileSystem extends \lithium\core\Adaptable {
 			throw new ConfigException("Configuration `{$name}` has not been defined.");
 		}
 
+		$filename = static::applyStrategies(__FUNCTION__ . 'Filename', $name, $filename, $options);
 		$method   = static::adapter($name)->exists($filename);
 		$params   = compact('filename', 'options');
 		return static::_filter(__FUNCTION__, $params, $method, $settings[$name]['filters']);
