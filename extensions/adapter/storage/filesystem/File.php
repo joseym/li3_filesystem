@@ -45,14 +45,27 @@ class File extends \lithium\core\Object implements FileSystemAdapater {
 	 *
 	 * @see app\extensions\storage\FileSystem::config()
 	 * @param array $config Configuration parameters.
-	 *        - 'path': parent directory where to store the file
+	 *        - `path`: parent directory where to store the file
 	 *          Defaults to `LITHIUM_APP_PATH . '/resources/tmp/files'`.
+	 *        - `mkdir`: `false` if path may not be created if needed, else
+	 *                   an array with mkdir options (default):
+	 *                   - `mode`: `550`
+	 *                   - `recursive`: `true`
+	 *                   - `writeReturns`: what `write()` should return on succes.
+	 *                      Allowed: 'name' (default), 'size'.
 	 */
 	public function __construct(array $config = array()) {
-		$defaults = array(
-			'path' => Libraries::get(true, 'resources') . '/tmp/files'
+		$config += array(
+			'path' => Libraries::get(true, 'resources') . '/tmp/files',
+			'mkdir' => array('mode' => 550, 'recursive' => true),
+			'writeReturns' => 'name',
 		);
-		parent::__construct($config + $defaults);
+		parent::__construct($config);
+
+		if ($config['mkdir']) {
+			$mkdir =$config['mkdir'];
+			mkdir($config['path'], $mkdir['mode'], $mkdir['recursive']);
+		}
 	}
 
 	/**
@@ -63,16 +76,24 @@ class File extends \lithium\core\Object implements FileSystemAdapater {
 	 * @param mixed $data The data to write. Can be either a string, an array or a stream resource.
 	 * @param mixed $options Options for the method.
 	 * @return callable A callable implementing the action.
-	 *                  The callable returns the number of bytes that were written, or `false` on failure.
+	 *                  The callable returns the number of bytes that were written, or `false`
+	 *                  on failure.
 	 */
 	public function write($filename, $data, array $options = array()) {
-		$path = $this->_config['path'];
+		$config = $this->_config;
+		$path = $config['path'];
 
 		return function($self, $params) use (&$path) {
 			$data = $params['data'];
 			$path = "{$path}/{$params['filename']}";
 
-			return file_put_contents($path, $data);
+			$size = file_put_contents($path, $data);
+			switch ($params['options']['writeReturns']) {
+				case 'size':
+					return $size;
+				default:
+					return $params['filename'];
+			}
 		};
 	}
 
