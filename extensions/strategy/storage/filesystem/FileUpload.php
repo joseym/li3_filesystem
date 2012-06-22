@@ -27,7 +27,7 @@ namespace li3_filesystem\extensions\strategy\storage\filesystem;
  *         'adapter' => 'File',
  *         'path' => 'uploads\',
  *         'strategies' => array(
- *             'SimpleFileUpload' => array('allowed' => array('png', 'jpg'))
+ *             'FileUpload' => array('allowed' => array('png', 'jpg'))
  *         )
  *     )
  * ));
@@ -40,7 +40,6 @@ namespace li3_filesystem\extensions\strategy\storage\filesystem;
 use li3_filesystem\extensions\storage\FileSystemException;
 
 class FileUpload extends \lithium\core\Object {
-
 
 	/**
 	 * When passed a the uploaded file variable from a form submission with
@@ -56,7 +55,7 @@ class FileUpload extends \lithium\core\Object {
 	 * @return mixed $data
 	 * @throws FileSystemException
 	 */
-	public function write($data, array $options = array() ) {
+	public function write($data, array $options = array()) {
 		$allowed  = $this->_config['allowed'];
 
 		$origFileName = pathinfo($data['name']);
@@ -72,6 +71,8 @@ class FileUpload extends \lithium\core\Object {
 
 		return $data;
 	}
+
+
 }
 
 ?>

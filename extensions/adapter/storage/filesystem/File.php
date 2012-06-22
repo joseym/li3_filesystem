@@ -61,11 +61,6 @@ class File extends \lithium\core\Object implements FileSystemAdapater {
 			'writeReturns' => 'name',
 		);
 		parent::__construct($config);
-
-		if ($config['mkdir']) {
-			$mkdir =$config['mkdir'];
-			mkdir($config['path'], $mkdir['mode'], $mkdir['recursive']);
-		}
 	}
 
 	/**
@@ -81,14 +76,14 @@ class File extends \lithium\core\Object implements FileSystemAdapater {
 	 */
 	public function write($filename, $data, array $options = array()) {
 		$config = $this->_config;
-		$path = $config['path'];
 
-		return function($self, $params) use (&$path) {
+		return function($self, $params) use ($config) {
+			$path = $config['path'];
 			$data = $params['data'];
 			$path = "{$path}/{$params['filename']}";
 
 			$size = file_put_contents($path, $data);
-			switch ($params['options']['writeReturns']) {
+			switch ($config['writeReturns']) {
 				case 'size':
 					return $size;
 				default:
@@ -109,7 +104,7 @@ class File extends \lithium\core\Object implements FileSystemAdapater {
 	public function read($filename, array $options = array()) {
 		$path = $this->_config['path'];
 
-		return function($self, $params) use (&$path) {
+		return function($self, $params) use ($path) {
 			$path = "{$path}/{$params['filename']}";
 
 			if (file_exists($path)) {
@@ -156,7 +151,7 @@ class File extends \lithium\core\Object implements FileSystemAdapater {
 	public function exists($filename, array $options = array()) {
 		$path = $this->_config['path'];
 
-		return function($self, $params) use (&$path) {
+		return function($self, $params) use ($path) {
 			$path = "{$path}/{$params['filename']}";
 
 			clearstatcache();
