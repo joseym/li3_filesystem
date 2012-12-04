@@ -57,11 +57,28 @@ class File extends \lithium\core\Object {
      * @return mixed returns filename or false otherwise.
      */
 	public function write($filename, $data, array $options = array()) {
+
 		$path = $this->_config['path'];
 
 		return function($self, $params) use (&$path) {
+
 			$data = $params['data'];
 			$path = "{$path}/{$params['filename']}";
+			$filename = basename($path);
+
+			$subpath = str_ireplace("/{$filename}", "", $path); // allow user to specify subpaths
+
+			// Create new directory if required
+			if (!file_exists($subpath)) {
+				@mkdir($subpath, 0777, true);
+				@chmod($subpath, 0777);
+			}
+
+			if(is_object($data) || is_array($data)){ // if a file upload object, array is passed we move a file
+				if($this->_upload($data, $path)){
+					return $params['filename'];
+				}
+			}
 
 			if (file_put_contents($path, $data)) {
 				return $params['filename'];
@@ -69,6 +86,10 @@ class File extends \lithium\core\Object {
 
 			return false;
 		};
+	}
+
+	private function _upload($data, $path){
+		return move_uploaded_file($data->tmp_name, $path);
 	}
 
 	/**
