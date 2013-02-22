@@ -118,7 +118,9 @@ class File extends \lithium\core\Object {
 		$path = $this->_config['path'];
 		return function($self, $params) use (&$path) {
 			$path = "{$path}/{$params['filename']}";
-
+			if(is_dir($path)){
+				rmdir($path);
+			}
 			if (file_exists($path)) {
 				return unlink($path);
 			}
